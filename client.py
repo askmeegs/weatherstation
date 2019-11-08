@@ -1,5 +1,5 @@
 from cassandra.cluster import Cluster
-from cassandra.policies import RoundRobinPolicy
+from cassandra.policies import DCAwareRoundRobinPolicy
 
 import sched, time
 import random
@@ -10,11 +10,12 @@ import uuid
 cities=["New York", "Baltimore", "Charlotte", "Atlanta", "Orlando", "Austin", "Los Angeles", "Salt Lake City", "Chicago"]
 
 s = sched.scheduler(time.time, time.sleep)
+cluster = Cluster(['c2.default.svc.cluster.local', 'c1.default.svc.cluster.local', 'c0.default.svc.cluster.local'],
+    load_balancing_policy=DCAwareRoundRobinPolicy(),
+    port=9042)
+session = cluster.connect('starrynight')
+
 def write_weather(sc):
-    cluster = Cluster(['c2.default.svc.cluster.local', 'c1.default.svc.cluster.local', 'c0.default.svc.cluster.local'],
-        load_balancing_policy=RoundRobinPolicy(),
-        port=9042)
-    session = cluster.connect('starrynight')
     insert_id = randint(10000000, 99999999) # 8-digit uuid
     timestamp = uuid.uuid1()
     city = random.choice(cities)
